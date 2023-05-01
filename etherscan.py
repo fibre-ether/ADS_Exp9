@@ -15,12 +15,15 @@ fieldnames= ["1","Txn Hash", "Method", "Block","2", "Age","3", "From","4", "To",
 for i in range(1, 100):
     driver.get(f'https://etherscan.io/txs?p={i}')
     time.sleep(5)
-    table = driver.find_element(By.XPATH, """//*[@id="ContentPlaceHolder1_divTransactions"]/div[2]/table""")
+    try:
+        table = driver.find_element(By.XPATH, """//*[@id="ContentPlaceHolder1_divTransactions"]/div[2]/table""")
 
-    for tr in table.find_element(By.XPATH, './tbody').find_elements(By.TAG_NAME, 'tr'):
-        row = [td.text.strip() for td in tr.find_elements(By.TAG_NAME, 'td')]
-        rows.append(row)
-    print(f"{i} Iteration Completed")
+        for tr in table.find_element(By.XPATH, './tbody').find_elements(By.TAG_NAME, 'tr'):
+            row = [td.text.strip() for td in tr.find_elements(By.TAG_NAME, 'td')]
+            rows.append(row)
+        print(f"{i} Iteration Completed")
+    except Exception as e:
+        print(e)
     if(i%20==0):
         df = pd.DataFrame(rows, columns = fieldnames)
         print(df.head())

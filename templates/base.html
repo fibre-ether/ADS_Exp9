@@ -15,10 +15,17 @@
         text-align: center;
       }
     </style>
-    {{ turbo() }}
+    {{ turbo() }}   
+
   </head>
   <body>
     {% include "transactions.html" %}
     {% block content %}{% endblock %}
+
+    <form method="post" action="/">
+      <input type="submit" value="Filter" name="Filter"/>
+      <input type="submit" value="Reset" name="Reset" />
+    </form>
+
   </body>
 </html>

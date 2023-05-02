@@ -27,5 +27,3 @@ def show():
     sparkDF2 = spark.createDataFrame(pandasDF,schema=mySchema)
 
     return sparkDF2.toPandas()
-
-print(show())

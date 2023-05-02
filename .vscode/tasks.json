@@ -1,0 +1,10 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "run socket server",
+            "type": "shell",
+            "command": "watchmedo auto-restart --pattern '*.py' --recursive --signal SIGTERM python socket_server.py"
+        }
+    ]
+}

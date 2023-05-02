@@ -1,6 +1,58 @@
-from flask import Flask
-app = Flask(__name__)
+import threading
+import time
+from flask import Flask, render_template, request
+from turbo_flask import Turbo
+from socket_client import get_socket_message
+from create_db import create_db
+from constants import *
 
-@app.route('/')
-def hello_world():
-    return 'Hello, World!'
+app = Flask(__name__)
+turbo = Turbo(app)
+
+create_db()
+
+query = ""
+
+
+@app.context_processor
+def inject_load():
+    # print("sending query:", query)
+    data = get_socket_message(query=query)
+    return {"data": data}
+
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+
+    global query
+    if request.method == 'POST':
+        if request.form.get('Filter') == 'Filter':
+            print("Filtering")
+            query = f"SELECT * FROM {table_name} WHERE TxnHash='0xd985d71e004f10e1034d5c152dea402496509d6f2b2643e215b7766676d5eee0'"
+            
+        elif request.form.get('Reset') == 'Reset':
+            print("Resetting")
+            query = ""
+
+    return render_template('index.html')
+
+
+@app.route('/set-query')
+def set_query():
+    print("Updating query")
+    global query
+    query = f"SELECT * FROM {table_name} WHERE Age='12 secs ago'"
+    return ("nothing")
+
+
+def update_load():
+    with app.app_context():
+        while True:
+            time.sleep(2)
+            turbo.push(turbo.replace(
+                render_template('transactions.html'), 'load'))
+
+
+th = threading.Thread(target=update_load)
+th.daemon = True
+th.start()

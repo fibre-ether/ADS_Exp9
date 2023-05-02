@@ -6,13 +6,16 @@ import csv
 import datetime
 import time
 import pandas as pd
+import os
 
 driver = webdriver.Chrome()
 
 rows = []
 fieldnames= ["1","Txn Hash", "Method", "Block","2", "Age","3", "From","4", "To", "Value", "Txn Fee","5"]
 
-for i in range(1, 100):
+pages = 2
+
+for i in range(1, pages):
     driver.get(f'https://etherscan.io/txs?p={i}')
     time.sleep(5)
     try:
@@ -34,5 +37,9 @@ for i in range(1, 100):
 df = pd.DataFrame(rows, columns = fieldnames)
 print(df.head())
 timestamp = datetime.datetime.now().strftime ("%Y%m%d_%H%M%S")
-df.to_csv(f"transactions-{timestamp}-{i}.csv")
+
+data = 'data'
+path = os.path.join(data, f"transactions-{timestamp}-{i}.csv")
+
+df.to_csv(path)
 

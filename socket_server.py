@@ -35,7 +35,7 @@ async def echo(websocket):
 
 
 async def main():
-    async with serve(echo, "localhost", 8765):
+    async with serve(echo,'', socket_port):
         await asyncio.Future()
 
 asyncio.run(main())

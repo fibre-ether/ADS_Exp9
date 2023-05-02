@@ -14,7 +14,6 @@ RUN pip3 install -r requirements.txt
 # RUN pip3 install pandas pyarrow 
 # RUN pip3 install -U --upgrade pyspark
 
-COPY small_zipcode.csv .
+COPY . .
 
-COPY main.py .
-COPY app.py .
+CMD ./run.sh

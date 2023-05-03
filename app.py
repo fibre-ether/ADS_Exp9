@@ -11,6 +11,10 @@ turbo = Turbo(app)
 
 create_db()
 
+f = open("hashes.csv", "w")
+f.write(",0\n0,2")
+f.close()
+
 query = ""
 
 

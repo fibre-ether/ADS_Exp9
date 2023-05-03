@@ -3,7 +3,7 @@ import time
 from flask import Flask, render_template, request
 from turbo_flask import Turbo
 from socket_client import get_socket_message
-from create_db import create_db
+from colab import create_db, analysis_iteration
 from constants import *
 
 app = Flask(__name__)
@@ -28,7 +28,8 @@ def index():
     if request.method == 'POST':
         if request.form.get('Filter') == 'Filter':
             print("Filtering")
-            query = f"SELECT * FROM {table_name} WHERE TxnHash='0xd985d71e004f10e1034d5c152dea402496509d6f2b2643e215b7766676d5eee0'"
+            query = ""
+            # query = f"SELECT * FROM {table_name} WHERE TxnHash='0xd985d71e004f10e1034d5c152dea402496509d6f2b2643e215b7766676d5eee0'"
             
         elif request.form.get('Reset') == 'Reset':
             print("Resetting")
@@ -37,12 +38,12 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/set-query')
-def set_query():
-    print("Updating query")
-    global query
-    query = f"SELECT * FROM {table_name} WHERE Age='12 secs ago'"
-    return ("nothing")
+# @app.route('/set-query')
+# def set_query():
+#     print("Updating query")
+#     global query
+#     query = f"SELECT * FROM {table_name} WHERE Age='12 secs ago'"
+#     return ("nothing")
 
 
 def update_load():

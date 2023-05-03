@@ -17,10 +17,7 @@ def get_data():
     hashes_df = pd.read_csv("hashes.csv")['0']
     hashes_list = hashes_df.to_list()
 
-    # print("before scrape")
     scraped_data = scrape(2)
-    # print("after scrape")
-    # print("scraped df:", scraped_data)
 
     global spark
     spark = SparkSession.builder.appName(
@@ -82,7 +79,7 @@ def do_analysis(df_spark=None):
     l1 = l.sort('count', ascending=False).limit(8)
 
     l1 = l1.toPandas()
-    l1.to_csv('l1.csv')
+    # l1.to_csv('l1.csv')
 
     # ### Methods with Highest Etherium Transaction Value
 
@@ -139,11 +136,12 @@ def add_to_db(analysis=None):
     
     conn = sqlite3.connect('analysis.sqlite')
     
-    analysis_mv = analysis[0]
-    analysis_tvf = analysis[1]
-    
-    # analysis_tvf = pd.read_csv("tvf_analysis.csv")
-    # analysis_mv = pd.read_csv("mv_analysis.csv")
+    if analysis:
+        analysis_mv = analysis[0]
+        analysis_tvf = analysis[1]
+    else:
+        analysis_tvf = pd.read_csv("tvf_analysis.csv")
+        analysis_mv = pd.read_csv("mv_analysis.csv")
     
     #tvf table
     time_value_fee_table = "tvf_analysis"
@@ -196,7 +194,15 @@ def add_to_db(analysis=None):
     conn.commit()
     conn.close()
 
+def analysis_iteration():
+    data = get_data()
+    analysis = do_analysis(data)
+    add_to_db(analysis)
 
-data = get_data()
-analysis = do_analysis(data)
-add_to_db(analysis)
+    
+def create_db():
+    add_to_db()
+    print("created db")
+    
+if __name__ == '__main__':
+    analysis_iteration()

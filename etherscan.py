@@ -10,12 +10,13 @@ import os
 
 driver = webdriver.Chrome()
 
-rows = []
-fieldnames= ["1","Txn Hash", "Method", "Block","2", "Age","3", "From","4", "To", "Value", "Txn Fee","5"]
+
 
 
 # pages = 2
 def scrape(pages=2):
+    rows = []
+    fieldnames= ["1","Txn Hash", "Method", "Block","2", "Age","3", "From","4", "To", "Value", "Txn Fee","5"]
     for i in range(1, pages):
         driver.get(f'https://etherscan.io/txs?p={i}')
         time.sleep(5)
@@ -42,5 +43,6 @@ def scrape(pages=2):
     # path = os.path.join(data, f"transactions-{timestamp}-{i}.csv")
 
     # df.to_csv(path)
+    print("SCRAPING DONE")
     return df
 

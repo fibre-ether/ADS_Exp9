@@ -44,5 +44,6 @@ def scrape(pages=2):
 
     # df.to_csv(path)
     print("SCRAPING DONE")
+    driver.quit()
     return df
 

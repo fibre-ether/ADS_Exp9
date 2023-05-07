@@ -2,20 +2,11 @@ import requests
 from datetime import datetime, timedelta
 import pandas as pd
 import time
+import random
 
-def get_time():
-  now = datetime.now()
-  # For getting transactions per minute need to change this to (minutes=1)
-  start_time = now - timedelta(days=1)
-  start_time_str = start_time.strftime("%Y-%m-%d %H:%M:%S")
-
-  end_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
-  return start_time_str, end_time_str
-
-def scraper(type):
-  start, end = get_time()
-  if type=='Etherium':
-    url = f"https://api.blockchair.com/ethereum/blocks?q=time({start}..{end})&limit=100"
+def scraper(type,start,end):
+  if type=='Ethereum':
+    url = f"https://api.blockchair.com/ethereum/transactions?q=time({start}..{end})&limit=100"
     response = requests.get(url)
   elif type=='Bitcoin':
     url = "https://api.blockchair.com/bitcoin/transactions"
@@ -41,10 +32,19 @@ def scraper(type):
   return df
 
 def main():
+   start = datetime.now()-timedelta(days=5)
+   end = datetime.now()+timedelta(hours=7)
+   start = start.strftime("%Y-%m-%d %H:%M:%S")
+   end_str = end.strftime("%Y-%m-%d %H:%M:%S")
+  #  print(start,end_str)
+  #  i = 0
    while(True):
-      df = scraper('Bitcoin')
-      df.to_csv("bitcoin.csv",index=False)
-      break
+      # print(start,end_str)
+      df = scraper('Ethereum',start,end_str)
+      start = end_str
+      end = end + timedelta(hours=7)
+      end_str = end.strftime("%Y-%m-%d %H:%M:%S")
+      n = random.randint(1,10000)
+      df.to_csv(f"{n}.csv",index=False)
       time.sleep(60)
-
 main()

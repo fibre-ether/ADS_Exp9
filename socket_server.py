@@ -7,7 +7,7 @@ from constants import *
 
 
 conn = sqlite3.connect('analysis.sqlite')
-sql_query = f'SELECT * FROM {tables[0]["table"]}'
+# sql_query = f'SELECT * FROM {tables[0]["table"]}'
 
 async def echo(websocket):
     query = ""
@@ -22,13 +22,16 @@ async def echo(websocket):
     
     pickled_df = None
     try:
-        parsed_query = pd.read_sql_query(query if query else sql_query, conn)
-        df = pd.DataFrame(parsed_query, columns=tables[0]["columns"])
-        print(df.shape)
-        print("query: ", query if query else sql_query)
-        print(df)
+        
+        # parsed_query = pd.read_sql_query(query if query else sql_query, conn)
+        # df = pd.DataFrame(parsed_query, columns=tables[0]["columns"])
+        # print(df.shape)
+        # print("query: ", query if query else sql_query)
+        type_df = pd.read_csv("data/type_data.csv").iloc[:,1:]
+        total_df = pd.read_csv("data/total_data.csv").iloc[:,1:]
+        print(type_df, total_df)
         # df = pd.read_csv("output.csv") 
-        pickled_df = pickle.dumps(df)
+        pickled_df = pickle.dumps([type_df, total_df])
     except Exception as e:
         print("Exception", e)
     finally:

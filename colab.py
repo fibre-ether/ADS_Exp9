@@ -1,13 +1,10 @@
 import pandas as pd
-import pyspark
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import isnan, col, udf, round as psround, sum as pssum
-from pyspark.sql.types import FloatType, StringType, DoubleType
-from etherscan import *
+from scraper_updated import main
 import time
-from datetime import datetime
-import sqlite3
 from constants import *
+import pyspark.sql.functions as F
+# import matplotlib.pyplot as plt
 
 spark = None
 current_time = time.time()
@@ -17,7 +14,7 @@ def get_data():
     hashes_df = pd.read_csv("hashes.csv")['0']
     hashes_list = hashes_df.to_list()
 
-    scraped_data = scrape(2)
+    scraped_data = main()
 
     global spark
     spark = SparkSession.builder.appName(
@@ -26,15 +23,13 @@ def get_data():
     df_spark = spark.createDataFrame(scraped_data)
 
     data_no_duplicates = df_spark.filter(
-        ~df_spark['Txn Hash'].isin(hashes_list))
+        ~df_spark['hash'].isin(hashes_list))
 
-    new_hashes = data_no_duplicates.toPandas()['Txn Hash']
+    new_hashes = data_no_duplicates.toPandas()['hash']
     aggregated_hashes = pd.concat([hashes_df, new_hashes])
-    # print("aggregated hashes", aggregated_hashes)
 
     aggregated_hashes.to_csv('hashes.csv')
 
-    # print(data_no_duplicates.show())
     return data_no_duplicates
 
 
@@ -45,19 +40,26 @@ def do_analysis(df_spark=None):
     
     # df_spark = spark.read.option('header', 'true').csv("data/new_data.csv")
     
-    columns_to_drop = ['1', '2', '3', '4', '5']
+    columns_to_drop = ['id','type_2718','date','v','r','s','version']
     df = df_spark.drop(*columns_to_drop)
 
-
-
-    df = df.withColumn("Txn Fee", df["Txn Fee"].cast(DoubleType()))
-
-    split_col = pyspark.sql.functions.split(df['Value'], ' ')
-    df = df.withColumn('Val', split_col.getItem(0))
-    df = df.withColumn('Type', split_col.getItem(1))
-
-
-    df = df.withColumn("Val", df["Val"].cast(DoubleType()))
+    # convert numeric columns to appropriate data types
+    df = df.withColumn("block_id", df["block_id"].cast("integer"))
+    df = df.withColumn("call_count", df["call_count"].cast("integer"))
+    df = df.withColumn("value", df["value"].cast("float"))
+    df = df.withColumn("value_usd", df["value_usd"].cast("float"))
+    df = df.withColumn("internal_value", df["internal_value"].cast("float"))
+    df = df.withColumn("internal_value_usd", df["internal_value_usd"].cast("float"))
+    df = df.withColumn("gas_used", df["gas_used"].cast("integer"))
+    df = df.withColumn("fee", df["fee"].cast("float"))
+    df = df.withColumn("fee_usd", df["fee_usd"].cast("float"))
+    df = df.withColumn("gas_limit", df["gas_limit"].cast("float"))
+    df = df.withColumn("gas_price", df["gas_price"].cast("float"))
+    df = df.withColumn("nonce", df["nonce"].cast("integer"))
+    df = df.withColumn("effective_gas_price", df["effective_gas_price"].cast("float"))
+    df = df.withColumn("max_fee_per_gas", df["max_fee_per_gas"].cast("float"))
+    df = df.withColumn('max_priority_fee_per_gas', df['max_priority_fee_per_gas'].cast("integer"))
+    df = df.withColumn("base_fee_per_gas", df["base_fee_per_gas"].cast("integer"))
 
     num_cols = []
     cat_cols = []
@@ -66,138 +68,101 @@ def do_analysis(df_spark=None):
         data_type = str(s.dataType)
         if data_type == "StringType()":
             cat_cols.append(s.name)
-
-        if data_type == "LongType()" or data_type == "DoubleType()":
+        
+        if data_type == "LongType()" or data_type == "DoubleType()" or data_type=='IntegerType()':
             num_cols.append(s.name)
 
-    cols = ['_c0', 'Value']
-    df1 = df.drop(*cols)
+    # for i in cat_cols:
+    #     num_unique = df.select(approxCountDistinct(f"{i}")).collect()[0][0]
+    #     print(f"{i} has {num_unique} unique values")
 
-    # ### Top 5 Methods of Transactions
+    df = df.fillna(0)
+    # df.show()
 
-    l = df1.groupBy('Method').count()
-    l1 = l.sort('count', ascending=False).limit(8)
-
-    l1 = l1.toPandas()
-    # l1.to_csv('l1.csv')
-
-    # ### Methods with Highest Etherium Transaction Value
-
-    df_cat_val = df1.groupby("Method").agg({'Val': "sum"})
-
-    method_high_transaction = df_cat_val.sort(
-        'Method', ascending=False).limit(5)
-
-    method_high_transaction = method_high_transaction.toPandas()
-    # method_high_transaction.to_csv('method.csv')
-
-    df1.select("Method", "Val", "Txn Fee").show(5)
-    # ### Analysing Top Etherium Transactions
-
-    # ### Comparison b/w gas prices and transaction timings
-    split_col = pyspark.sql.functions.split(df1['Age'], ' ')
-    df1 = df1.withColumn('Time', split_col.getItem(0))
-
-    global current_time
+    type_analysis = df.groupBy("type").agg(F.sum("gas_used").alias("total_gas_used"),F.sum("value_usd").alias("total_value_txn_usd"),F.sum("effective_gas_price").alias("total_effective_gas_price"),F.sum("fee_usd").alias("total_fee_usd"),F.sum("call_count").alias("total_call_count"))
+    type_analysis_pd = type_analysis.toPandas()
     
-    def get_nearest_hour(x):
-        datetime_x = datetime.fromtimestamp(x)
-        return str(datetime_x.replace(second=0, microsecond=0, minute=datetime_x.minute))
+    total_gas = df.select(F.sum("gas_used")).collect()[0][0]
+    total_value_transferred = df.agg(F.sum("value_usd")).collect()[0][0]
+    total_transactions = df.count()
     
-    current_time_udf = udf(lambda x: current_time-float(x), FloatType())
+    total_stats = pd.DataFrame({"total_gas":[total_gas], "total_value_transferred":[total_value_transferred], "total_transactions":[total_transactions]})
+    print(total_stats, type_analysis_pd)
     
-    nearest_hour_udf = udf(lambda x: get_nearest_hour(x), StringType())
     
-    df1 = df1.withColumn("Time", current_time_udf(col("Time")))
-    df1 = df1.withColumn("Time", nearest_hour_udf(col("Time")))
-    df1 = df1.withColumn("Val",psround(df['Val'].cast(DoubleType()),5))
-    df1 = df1.withColumn("Txn Fee",psround(df['Txn Fee'].cast(DoubleType()),5))
-
-    comp = df1.select("Txn Fee", "Time", "Val")
-    
-    comp = comp.groupBy("Time") \
-        .agg(pssum("Val").alias("total_value"), \
-         pssum("Txn Fee").alias("total_txn_fee"))
-
-    comp = comp.toPandas()
-    # data = comp[['Time', 'Txn Fee', 'Val']]
-    # print(data.head())
-
-    output = [method_high_transaction, comp]
-    comp.to_csv("tvf_analysis.csv")
-    method_high_transaction.to_csv("mv_analysis.csv")
+    output = [type_analysis_pd, total_stats]
+    type_analysis_pd.to_csv("type_analysis.csv")
+    total_stats.to_csv("total_stats.csv")
     return output
 
 
 def add_to_db(analysis=None):
     print("---analysis---")
-    # print(analysis[0])
-    # print(analysis[1])
-    
-    conn = sqlite3.connect('analysis.sqlite')
     
     if analysis:
-        analysis_mv = analysis[0]
-        analysis_tvf = analysis[1]
+        analysis_total = analysis[1]
+        analysis_type = analysis[0]
     else:
-        analysis_tvf = pd.read_csv("tvf_analysis.csv")
-        analysis_mv = pd.read_csv("mv_analysis.csv")
+        analysis_total = pd.read_csv("total_stats.csv", index_col=0)
+        analysis_type = pd.read_csv("type_analysis.csv", index_col=0)
     
-    #tvf table
-    time_value_fee_table = "tvf_analysis"
+    analysis_type = analysis_type.set_index('type')
+    type_df = pd.DataFrame()
+    try:
+        type_df = pd.read_csv("data/type_data.csv", index_col=0)
+    except:
+        print("---------------file not found, using cached data-------------------------")
+    print("fetched typedf:")
+    print(type_df)
+    print("scraped typedf:")
+    print(analysis_type)
+    
+    if not type_df.empty:
+        type_df = pd.concat([analysis_type, type_df], axis=0)
+    else:
+        type_df = analysis_type
 
-    query = f'Create table if not Exists {time_value_fee_table} (Time text ,total_value real, total_txn_fee real)'
-    conn.execute(query)
+    print("typedf before agg:")
+    print(type_df)
+    type_df = type_df.groupby('type').agg('sum')
     
-    tvf_df = pd.read_sql_query(f"select * from {time_value_fee_table}", conn)
-    print("fetched tvfdf:")
-    print(tvf_df)
+    print("new typedf:")
+    print(type_df)
     
-    if not tvf_df.empty:
-        tvf_df = pd.concat([analysis_tvf, tvf_df], axis=0)
-    else:
-        tvf_df = analysis_tvf
+    type_df.to_csv("data/type_data.csv")
+    
+    #total table
+    total_df = pd.DataFrame()
+    try:
+        total_df = pd.read_csv("data/total_data.csv", index_col=0)
+    except:
+        print("---------------file not found, using cached data-------------------------")
+    print("fetched totaldf:")
+    print(total_df)
+    
+    if not total_df.empty:
+        # print("analysis_total, total_df")
+        # print(analysis_total.head())
+        total_df = pd.concat([analysis_total, total_df], axis=0)
+        # print(total_df.head())
         
-    tvf_df = tvf_df.groupby('Time').agg({'total_value' : 'sum', 'total_txn_fee' : 'sum'})
-    
-    print("new tvfdf:")
-    print(tvf_df)
-    
-    tvf_df.to_sql(time_value_fee_table,conn,if_exists='replace')
-    
-    #mv table
-    method_value_table = "mv_analysis"
-    
-    query = f'Create table if not Exists {method_value_table} (Method text ,sum_val real)'
-    conn.execute(query)
-    
-    analysis_mv.rename(columns = {'sum(Val)':'sum_val'}, inplace = True)
-    
-    mv_df = pd.read_sql_query(f"select * from {method_value_table}", conn)
-    print("fetched mvdf:")
-    print(mv_df)
-    
-    if not mv_df.empty:
-        mv_df = pd.concat([analysis_mv, mv_df], axis=0)
     else:
-        mv_df = analysis_mv
+        total_df = analysis_total
         
-    mv_df = mv_df.groupby('Method').agg({'sum_val' : 'sum'})
-    mv_df = mv_df.where(mv_df['sum_val']>0).dropna()
+    total_df = total_df.agg(['sum'])
     
     
-    print("new mvdf:")
-    print(mv_df)
+    print("new totaldf:")
+    print(total_df)
     
-    mv_df.to_sql(method_value_table,conn,if_exists='replace')
-    
-    conn.commit()
-    conn.close()
+    total_df.to_csv("data/total_data.csv")
+
 
 def analysis_iteration():
     data = get_data()
     analysis = do_analysis(data)
     add_to_db(analysis)
+    # add_to_db()
 
     
 def create_db():
@@ -205,4 +170,7 @@ def create_db():
     print("created db")
     
 if __name__ == '__main__':
-    analysis_iteration()
+    while True:
+        analysis_iteration()
+        print("iteration complete. Waiting for 60 secs")
+        time.sleep(60)

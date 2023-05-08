@@ -32,19 +32,20 @@ def scraper(type,start,end):
   return df
 
 def main():
-   start = datetime.now()-timedelta(days=5)
-   end = datetime.now()+timedelta(hours=7)
-   start = start.strftime("%Y-%m-%d %H:%M:%S")
-   end_str = end.strftime("%Y-%m-%d %H:%M:%S")
+  start = datetime.now()-timedelta(days=5)
+  end = datetime.now()+timedelta(hours=7)
+  start = start.strftime("%Y-%m-%d %H:%M:%S")
+  end_str = end.strftime("%Y-%m-%d %H:%M:%S")
   #  print(start,end_str)
   #  i = 0
-   while(True):
+  df = scraper('Ethereum',start,end_str)
+  return df
+  #  while(True):
       # print(start,end_str)
-      df = scraper('Ethereum',start,end_str)
-      start = end_str
-      end = end + timedelta(hours=7)
-      end_str = end.strftime("%Y-%m-%d %H:%M:%S")
-      n = random.randint(1,10000)
-      df.to_csv(f"{n}.csv",index=False)
-      time.sleep(60)
-main()
+      # start = end_str
+      # end = end + timedelta(hours=7)
+      # end_str = end.strftime("%Y-%m-%d %H:%M:%S")
+      # n = random.randint(1,10000)
+      # df.to_csv(f"{n}.csv",index=False)
+      # time.sleep(60)
+# main()

@@ -9,7 +9,7 @@ from constants import *
 app = Flask(__name__)
 turbo = Turbo(app)
 
-create_db()
+# create_db()
 
 f = open("hashes.csv", "w")
 f.write(",0\n0,2")
@@ -22,7 +22,7 @@ query = ""
 def inject_load():
     # print("sending query:", query)
     data = get_socket_message(query=query)
-    return {"data": data}
+    return {"type_data": data[0], "total_data": data[1] }
 
 
 @app.route('/', methods=['GET', 'POST'])

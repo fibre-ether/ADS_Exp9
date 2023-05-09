@@ -82,5 +82,3 @@ th = threading.Thread(target=update_load)
 th.daemon = True
 th.start()
 
-if __name__ == "__main__":
-    app.run(debug=True)

@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
     <title>Crypto-Transaction Analysis</title>
@@ -10,22 +10,26 @@
         margin-bottom: 10px;
         padding: 10px;
       }
-      .load th, .load td {
+      .load th,
+      .load td {
         padding: 6px;
         text-align: center;
       }
     </style>
-    {{ turbo() }}   
-
+    {{ turbo() }}
+    <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body>
-    {% include "transactions.html" %}
-    {% block content %}{% endblock %}
+    {% include "transactions.html" %} {% block content %}{% endblock %}
 
     <form method="post" action="/">
-      <input type="submit" value="Filter" name="Filter"/>
+      <input type="submit" value="Filter" name="Filter" />
       <input type="submit" value="Reset" name="Reset" />
     </form>
-
   </body>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script type="text/javascript">
+    var graphs = {{graphJSON | safe}};
+    Plotly.plot('chart',graphs,{});
+  </script>
 </html>

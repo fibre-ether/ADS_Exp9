@@ -5,6 +5,10 @@ from turbo_flask import Turbo
 from socket_client import get_socket_message
 from colab import create_db, analysis_iteration
 from constants import *
+import pandas as pd
+import json
+import plotly
+import plotly.express as px
 
 app = Flask(__name__)
 turbo = Turbo(app)
@@ -27,7 +31,6 @@ def inject_load():
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-
     global query
     if request.method == 'POST':
         if request.form.get('Filter') == 'Filter':
@@ -38,9 +41,26 @@ def index():
         elif request.form.get('Reset') == 'Reset':
             print("Resetting")
             query = ""
+    # Students data available in a list of list
+    students = [['Akash', 34, 'Sydney', 'Australia'],
+                ['Rithika', 30, 'Coimbatore', 'India'],
+                ['Priya', 31, 'Coimbatore', 'India'],
+                ['Sandy', 32, 'Tokyo', 'Japan'],
+                ['Praneeth', 16, 'New York', 'US'],
+                ['Praveen', 17, 'Toronto', 'Canada']] 
+    # Convert list to dataframe and assign column values
+    df = pd.DataFrame(students,
+                      columns=['Name', 'Age', 'City', 'Country'],
+                      index=['a', 'b', 'c', 'd', 'e', 'f'])
+    # Create Bar chart
+    fig = px.bar(df, x='Name', y='Age', color='City', barmode='group')
+    # Create graphJSON
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return render_template('index.html', graphJSON=graphJSON)
 
-    return render_template('index.html')
-
+# @app.route('/template')
+# def dashboard():
+#     return render_template('index.html')
 
 # @app.route('/set-query')
 # def set_query():
@@ -61,3 +81,6 @@ def update_load():
 th = threading.Thread(target=update_load)
 th.daemon = True
 th.start()
+
+if __name__ == "__main__":
+    app.run(debug=True)

@@ -26,7 +26,16 @@ query = ""
 def inject_load():
     # print("sending query:", query)
     data = get_socket_message(query=query)
-    return {"type_data": data[0], "total_data": data[1] }
+    print(data)
+
+    df = pd.DataFrame(data[0],
+                        columns=data[0].columns)
+    # Create Bar chart
+    fig = px.bar(df, x=df.index, y='total_gas_used', color='total_gas_used', barmode='group')
+    # Create graphJSON
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+    return {"type_data": data[0], "total_data": data[1], "graphJSON": graphJSON }
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -49,14 +58,8 @@ def index():
                 ['Praneeth', 16, 'New York', 'US'],
                 ['Praveen', 17, 'Toronto', 'Canada']] 
     # Convert list to dataframe and assign column values
-    df = pd.DataFrame(students,
-                      columns=['Name', 'Age', 'City', 'Country'],
-                      index=['a', 'b', 'c', 'd', 'e', 'f'])
-    # Create Bar chart
-    fig = px.bar(df, x='Name', y='Age', color='City', barmode='group')
-    # Create graphJSON
-    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-    return render_template('index.html', graphJSON=graphJSON)
+    
+    return render_template('index.html')
 
 # @app.route('/template')
 # def dashboard():

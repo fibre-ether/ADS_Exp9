@@ -4,8 +4,7 @@
     <title>Crypto-Transaction Analysis</title>
     <style>
       .load {
-        width: 300px;
-        border: 1px solid black;
+        width: 100vw;
         margin-left: 10px;
         margin-bottom: 10px;
         padding: 10px;
@@ -22,10 +21,10 @@
   <body>
     {% include "transactions.html" %} {% block content %}{% endblock %}
 
-    <form method="post" action="/">
+    <!-- <form method="post" action="/">
       <input type="submit" value="Filter" name="Filter" />
       <input type="submit" value="Reset" name="Reset" />
-    </form>
+    </form> -->
   </body>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script type="text/javascript">

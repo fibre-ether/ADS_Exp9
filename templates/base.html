@@ -2,19 +2,6 @@
 <html>
   <head>
     <title>Crypto-Transaction Analysis</title>
-    <style>
-      .load {
-        width: 100vw;
-        margin-left: 10px;
-        margin-bottom: 10px;
-        padding: 10px;
-      }
-      .load th,
-      .load td {
-        padding: 6px;
-        text-align: center;
-      }
-    </style>
     {{ turbo() }}
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
@@ -27,8 +14,4 @@
     </form> -->
   </body>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script type="text/javascript">
-    var graphs = {{graphJSON | safe}};
-    Plotly.plot('chart',graphs,{});
-  </script>
 </html>

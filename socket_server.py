@@ -27,7 +27,7 @@ async def echo(websocket):
         # df = pd.DataFrame(parsed_query, columns=tables[0]["columns"])
         # print(df.shape)
         # print("query: ", query if query else sql_query)
-        type_df = pd.read_csv("data/type_data.csv").iloc[:,1:]
+        type_df = pd.read_csv("data/type_data.csv")
         total_df = pd.read_csv("data/total_data.csv").iloc[:,1:]
         print(type_df, total_df)
         # df = pd.read_csv("output.csv") 

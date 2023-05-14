@@ -2,12 +2,16 @@ import pandas as pd
 from pyspark.sql import SparkSession
 from scraper_updated import main
 import time
+import sqlite3
 from constants import *
 import pyspark.sql.functions as F
 # import matplotlib.pyplot as plt
 
 spark = None
 current_time = time.time()
+
+table_name = "Crypto"
+
 
 def get_data():
 
@@ -91,6 +95,7 @@ def do_analysis(df_spark=None):
     
     
     output = [type_analysis_pd, total_stats]
+    print("Output: ", output)
     type_analysis_pd.to_csv("type_analysis.csv")
     total_stats.to_csv("total_stats.csv")
     return output
@@ -155,22 +160,42 @@ def add_to_db(analysis=None):
     print("new totaldf:")
     print(total_df)
     
+    conn = sqlite3.connect('analysis.sqlite')
+    query = f'Create table if not Exists {table_name} (type text, total_gas text, total_value_transferred text, total_transactions text)'
+    conn.execute(query)
+
+    total_df.to_sql(table_name, conn, if_exists="append", index=False)
     total_df.to_csv("data/total_data.csv")
+
+    conn.commit()
+    conn.close()
+    print("Added to DB")
 
 
 def analysis_iteration():
-    data = get_data()
-    analysis = do_analysis(data)
-    add_to_db(analysis)
+    # data = get_data()
+    # analysis = do_analysis(data)
+    add_to_db()
     # add_to_db()
 
     
 def create_db():
     add_to_db()
     print("created db")
-    
+
+def retrive_data():
+    conn = sqlite3.connect('analysis.sqlite')
+
+    r_df = pd.read_sql("select * from Crypto",conn)
+    # r_df = pd.read_sql("select * from Crypto order by total_transactions desc limit 1",conn)
+    print(r_df)
+
+    # conn.close()
+    print("Retreived from DB")
+
 if __name__ == '__main__':
     while True:
         analysis_iteration()
         print("iteration complete. Waiting for 60 secs")
+        retrive_data()
         time.sleep(60)

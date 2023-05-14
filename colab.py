@@ -164,7 +164,7 @@ def add_to_db(analysis=None):
     query = f'Create table if not Exists {table_name} (type text, total_gas text, total_value_transferred text, total_transactions text)'
     conn.execute(query)
 
-    total_df.to_sql(table_name, conn, if_exists="append", index=False)
+    total_df.to_sql(table_name, conn, if_exists="replace", index=False)
     total_df.to_csv("data/total_data.csv")
 
     conn.commit()

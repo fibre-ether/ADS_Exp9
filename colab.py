@@ -112,8 +112,11 @@ def add_to_db(analysis=None):
         analysis_type = pd.read_csv("type_analysis.csv", index_col=0)
     
     analysis_type = analysis_type.set_index('type')
+    
+    #analysis table
     type_df = pd.DataFrame()
     try:
+        #TODO: fetch data from db
         type_df = pd.read_csv("data/type_data.csv", index_col=0)
     except:
         print("---------------file not found, using cached data-------------------------")
@@ -134,11 +137,13 @@ def add_to_db(analysis=None):
     print("new typedf:")
     print(type_df)
     
+    #TODO: add to db
     type_df.to_csv("data/type_data.csv")
     
     #total table
     total_df = pd.DataFrame()
     try:
+        #TODO: fetch from db
         total_df = pd.read_csv("data/total_data.csv", index_col=0)
     except:
         print("---------------file not found, using cached data-------------------------")
@@ -175,8 +180,8 @@ def add_to_db(analysis=None):
 def analysis_iteration():
     # data = get_data()
     # analysis = do_analysis(data)
+    # add_to_db(analysis)
     add_to_db()
-    # add_to_db()
 
     
 def create_db():

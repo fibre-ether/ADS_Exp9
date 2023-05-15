@@ -11,6 +11,7 @@ spark = None
 current_time = time.time()
 
 table_name = "Crypto"
+table_2 = "TypeData"
 
 
 def get_data():
@@ -102,6 +103,16 @@ def do_analysis(df_spark=None):
 
 
 def add_to_db(analysis=None):
+    conn = sqlite3.connect('analysis.sqlite')
+    cursor_obj = conn.cursor()
+
+    query = f'Create table if not Exists {table_name} (type text, total_gas text, total_value_transferred text, total_transactions text)'
+    conn.execute(query)
+
+    query = f'Create table if not Exists {table_2} (type text, total_gas text, total_value_transferred text, total_transactions text)'
+    conn.execute(query)
+
+    
     print("---analysis---")
     
     if analysis:
@@ -117,7 +128,16 @@ def add_to_db(analysis=None):
     type_df = pd.DataFrame()
     try:
         #TODO: fetch data from db
-        type_df = pd.read_csv("data/type_data.csv", index_col=0)
+        # Get Data from type_data
+        get = f'SELECT * from {table_2}'
+        cursor_obj.execute(get)
+        output = cursor_obj.fetchall()
+        print("Selecting")
+        type_df = []
+        for row in output:
+            print(row)
+            type_df.append(row)
+        # type_df = pd.read_csv("data/type_data.csv", index_col=0)
     except:
         print("---------------file not found, using cached data-------------------------")
     print("fetched typedf:")
@@ -125,8 +145,8 @@ def add_to_db(analysis=None):
     print("scraped typedf:")
     print(analysis_type)
     
-    if not type_df.empty:
-        type_df = pd.concat([analysis_type, type_df], axis=0)
+    if not type_df:
+        type_df = [analysis_type, type_df]
     else:
         type_df = analysis_type
 
@@ -139,35 +159,33 @@ def add_to_db(analysis=None):
     
     #TODO: add to db
     type_df.to_csv("data/type_data.csv")
+    type_df.to_sql(table_2, conn, if_exists="replace", index=False)
     
     #total table
     total_df = pd.DataFrame()
     try:
         #TODO: fetch from db
-        total_df = pd.read_csv("data/total_data.csv", index_col=0)
+        get = f'SELECT * from {table_name}'
+        cursor_obj.execute(get)
+        output = cursor_obj.fetchall()
+        print("Selecting")
+        total_df = []
+        for row in output:
+            print(row)
+            total_df.append(row)
+        # total_df = pd.read_csv("data/total_data.csv", index_col=0)
     except:
         print("---------------file not found, using cached data-------------------------")
     print("fetched totaldf:")
     print(total_df)
     
-    if not total_df.empty:
-        # print("analysis_total, total_df")
-        # print(analysis_total.head())
-        total_df = pd.concat([analysis_total, total_df], axis=0)
-        # print(total_df.head())
-        
+    if not total_df:
+        total_df = [analysis_total, total_df]
     else:
-        total_df = analysis_total
-        
+        total_df = analysis_total   
     total_df = total_df.agg(['sum'])
-    
-    
     print("new totaldf:")
     print(total_df)
-    
-    conn = sqlite3.connect('analysis.sqlite')
-    query = f'Create table if not Exists {table_name} (type text, total_gas text, total_value_transferred text, total_transactions text)'
-    conn.execute(query)
 
     total_df.to_sql(table_name, conn, if_exists="replace", index=False)
     total_df.to_csv("data/total_data.csv")

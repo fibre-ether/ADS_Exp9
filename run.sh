@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Start the first process
-source scraper_runner.sh
+# source scraper_runner.sh
+python3 colab.py &
+
 
 # Start the second process
 python3 socket_server.py &
